@@ -1,0 +1,776 @@
+<title>مُحاسب – موجّه المحاسبة اليومي</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@500;700&display=swap">
+<style>
+/* Layout: دفتر أستاذ — شريط تنقل جانبي ثابت، ومساحة عمل واحدة تتبدل حسب القسم؛ القيود تُرسم دائماً كعمودين مدين/دائن */
+:root{
+  --bg:#f1f5f4; --surface:#ffffff; --sunken:#e7eeec; --ink:#13201d; --muted:#566863; --line:#d3dedb;
+  --accent:#0b6b58; --accent-ink:#ffffff; --accent-soft:#dcefe9;
+  --debit:#1b4f8c; --credit:#8f4410;
+  --ok:#17723f; --ok-soft:#dff2e6; --warn:#8a5a00; --warn-soft:#fbefd0; --bad:#a3262b; --bad-soft:#fae1e1;
+  --display:"Reem Kufi","IBM Plex Sans Arabic",Tahoma,sans-serif;
+  --body:"IBM Plex Sans Arabic","Segoe UI",Tahoma,Arial,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1513; --surface:#16201d; --sunken:#1d2a26; --ink:#e5eeeb; --muted:#94a7a1; --line:#2b3a35;
+  --accent:#56c7a9; --accent-ink:#06211a; --accent-soft:#17352d;
+  --debit:#8fbdf2; --credit:#f0b07a;
+  --ok:#74d39a; --ok-soft:#153324; --warn:#f0c15c; --warn-soft:#3a2e10; --bad:#f39a9a; --bad-soft:#3d1a1b;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0e1513; --surface:#16201d; --sunken:#1d2a26; --ink:#e5eeeb; --muted:#94a7a1; --line:#2b3a35;
+  --accent:#56c7a9; --accent-ink:#06211a; --accent-soft:#17352d;
+  --debit:#8fbdf2; --credit:#f0b07a;
+  --ok:#74d39a; --ok-soft:#153324; --warn:#f0c15c; --warn-soft:#3a2e10; --bad:#f39a9a; --bad-soft:#3d1a1b;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.75;direction:rtl;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.shell{max-width:1180px;margin-inline:auto;display:grid;grid-template-columns:220px minmax(0,1fr);gap:28px;align-items:start}
+.side{position:sticky;top:env(safe-area-inset-top,0px);padding-block:20px;display:flex;flex-direction:column;gap:16px;background:var(--bg);z-index:5}
+.brand{display:flex;flex-direction:column;gap:2px}
+.brand b{font-family:var(--display);font-size:30px;line-height:1.2;color:var(--accent)}
+.brand span{font-size:13px;color:var(--muted)}
+nav{display:flex;flex-direction:column;gap:2px}
+nav a{display:block;padding:8px 12px;border-radius:8px;color:var(--ink);text-decoration:none;font-weight:500;font-size:15px;white-space:nowrap}
+nav a:hover{background:var(--sunken)}
+nav a[aria-current="page"]{background:var(--accent);color:var(--accent-ink)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:24px;min-width:0;display:flex;flex-direction:column;gap:22px}
+section.view{display:flex;flex-direction:column;gap:22px}
+h1{font-family:var(--display);font-size:30px;line-height:1.3;margin:0;text-wrap:balance}
+h2{font-size:20px;margin:0;line-height:1.4;text-wrap:balance}
+h3{font-size:16px;margin:0;line-height:1.5}
+p{margin:0;max-width:68ch}
+.lead{color:var(--muted);max-width:68ch}
+.stack{display:flex;flex-direction:column;gap:12px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.note{background:var(--sunken);border-radius:8px;padding:10px 14px;font-size:14px;color:var(--muted)}
+ul,ol{margin:0;padding-inline-start:22px;display:flex;flex-direction:column;gap:4px;max-width:70ch}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--muted);min-width:0}
+input.num,input.txt,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;font-variant-numeric:tabular-nums}
+input.num{direction:ltr;text-align:right}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:8px 16px;font-weight:600}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 14px;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:1px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.tag.ex{background:var(--warn-soft);color:var(--warn)}
+.status{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border-radius:8px;font-size:15px}
+.status b{white-space:nowrap}
+.status.ok{background:var(--ok-soft);color:var(--ok)} .status.warn{background:var(--warn-soft);color:var(--warn)} .status.bad{background:var(--bad-soft);color:var(--bad)}
+.status span{color:var(--ink)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:start;vertical-align:top}
+th{font-size:13px;color:var(--muted);font-weight:600}
+td.n,th.n{text-align:left;direction:ltr;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.entry{max-width:560px}
+table.entry td.dr{color:var(--debit);font-weight:600} table.entry td.cr{color:var(--credit);font-weight:600;padding-inline-start:34px}
+table.entry tr.diff td{background:var(--bad-soft);color:var(--bad)}
+.dr-t{color:var(--debit);font-weight:700} .cr-t{color:var(--credit);font-weight:700}
+.check{display:flex;gap:10px;align-items:flex-start;padding:6px 0}
+.check input{width:20px;height:20px;margin-top:5px;flex:none;accent-color:var(--accent)}
+.check:has(input:checked) span{color:var(--muted);text-decoration:line-through}
+details{border-bottom:1px solid var(--line);padding:10px 0}
+details:last-child{border-bottom:0}
+summary{cursor:pointer;font-weight:600}
+details>div{padding-top:10px;display:flex;flex-direction:column;gap:10px}
+.kv{display:grid;grid-template-columns:110px minmax(0,1fr);gap:4px 12px;font-size:15px}
+.kv dt{color:var(--muted);font-size:13px;padding-top:3px} .kv dd{margin:0}
+.eq{font-family:var(--display);font-size:22px;text-align:center;padding:14px;background:var(--sunken);border-radius:8px}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.flow span{background:var(--sunken);border-radius:8px;padding:6px 12px;font-size:14px;font-weight:500}
+.flow i{font-style:normal;color:var(--muted)}
+@media (max-width:820px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:0}
+  .side{padding-block:12px 8px;gap:8px;border-bottom:1px solid var(--line)}
+  .brand{flex-direction:row;align-items:baseline;gap:10px} .brand b{font-size:24px}
+  nav{flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:4px}
+  h1{font-size:25px}
+  .kv{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:no-preference){ nav a,.chip{transition:background .15s} }
+</style>
+
+<div class="shell">
+  <div class="side">
+    <div class="brand"><b>مُحاسب</b><span>موجّهك اليومي في المحاسبة</span></div>
+    <nav id="nav" aria-label="الأقسام">
+      <a href="#today">مطابقة اليوم</a>
+      <a href="#guide">موجّه العمليات</a>
+      <a href="#mistakes">أخطاء المبيعات</a>
+      <a href="#negative">الأصناف بالسالب</a>
+      <a href="#ledger">الأستاذ العام</a>
+      <a href="#basics">أساسيات المحاسبة</a>
+      <a href="#closing">الإقفال والمراجعة</a>
+      <a href="#glossary">المصطلحات</a>
+    </nav>
+  </div>
+
+  <main>
+  <!-- ===================== مطابقة اليوم ===================== -->
+  <section class="view" id="v-today">
+    <div class="stack">
+      <h1>مطابقة مبيعات اليوم</h1>
+      <p class="lead">أدخل أرقام تقرير المبيعات الذي استلمته، والموجّه يطابقها ويخبرك أين الفرق وما القيد المتوقع وماذا تفعل بعدها.</p>
+    </div>
+
+    <div class="panel">
+      <div class="row"><h2>أرقام التقرير</h2><span class="tag ex" id="exTag">أرقام مثال، استبدلها بأرقامك</span></div>
+      <div class="fields">
+        <label class="f">إجمالي المبيعات (شامل الضريبة)<input class="num" id="r-total" inputmode="decimal"></label>
+        <label class="f">نقدًا<input class="num" id="r-cash" inputmode="decimal"></label>
+        <label class="f">شبكة (مدى / بطاقات)<input class="num" id="r-net" inputmode="decimal"></label>
+        <label class="f">تحويل بنكي<input class="num" id="r-trf" inputmode="decimal"></label>
+        <label class="f">آجل (على العملاء)<input class="num" id="r-crd" inputmode="decimal"></label>
+        <label class="f">نسبة الضريبة %<input class="num" id="r-vat" inputmode="decimal"></label>
+      </div>
+      <h3>الصندوق وجهاز الشبكة</h3>
+      <div class="fields">
+        <label class="f">رصيد الصندوق أول اليوم<input class="num" id="r-float" inputmode="decimal"></label>
+        <label class="f">مرتجعات دُفعت نقدًا للعملاء<input class="num" id="r-ret" inputmode="decimal"></label>
+        <label class="f">مصروفات دُفعت من الصندوق<input class="num" id="r-exp" inputmode="decimal"></label>
+        <label class="f">النقد المعدود فعليًا<input class="num" id="r-count" inputmode="decimal"></label>
+        <label class="f">إجمالي موازنة جهاز الشبكة<input class="num" id="r-slip" inputmode="decimal"></label>
+      </div>
+      <div class="row"><button class="btn ghost" id="clearBtn" type="button">تفريغ الخانات</button></div>
+    </div>
+
+    <div class="panel">
+      <h2>نتيجة المطابقة</h2>
+      <div class="stack" id="recon"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <h2>القيد المتوقع لمبيعات اليوم</h2>
+        <div class="scroll"><table class="entry" id="dayEntry"></table></div>
+        <p class="note">النظام ينشئ هذا القيد تلقائيًا من الفواتير. دورك أن تتأكد أن أرصدة الحسابات في النظام تساوي هذه الأرقام، لا أن تدخله يدويًا.</p>
+      </div>
+      <div class="panel">
+        <h2>تحليل الضريبة</h2>
+        <div class="scroll"><table id="vatTable"></table></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="row"><h2>مسار استلام اليوم</h2><button class="btn ghost" id="resetDay" type="button">بدء يوم جديد</button></div>
+      <p class="lead">نفّذها بالترتيب عند استلام الفواتير والتقرير من المبيعات. العلامات تُحفظ على هذا الجهاز فقط.</p>
+      <div id="dayChecks"></div>
+    </div>
+  </section>
+
+  <!-- ===================== موجّه العمليات ===================== -->
+  <section class="view" id="v-guide" hidden>
+    <div class="stack">
+      <h1>موجّه العمليات</h1>
+      <p class="lead">اختر العملية التي أمامك، يظهر لك متى تُستخدم، وقيدها، وخطوات إدخالها، وما تراجعه بعد الحفظ.</p>
+      <p class="note">أسماء الشاشات هنا هي الأسماء المتعارف عليها في الأنظمة المحاسبية. قد تختلف التسمية قليلًا في «المحاسب الشامل بلس»؛ ابحث عن أقرب اسم في القائمة.</p>
+    </div>
+    <div class="row" id="opFilters"></div>
+    <div class="panel" id="opList"></div>
+  </section>
+
+  <!-- ===================== أخطاء المبيعات ===================== -->
+  <section class="view" id="v-mistakes" hidden>
+    <div class="stack">
+      <h1>أخطاء المبيعات الشائعة</h1>
+      <p class="lead">الأخطاء التي يُدخلها موظفو المبيعات غالبًا، وكيف تكشف كل واحد منها وكيف تصحّحه.</p>
+      <p class="note">قاعدة عامة: لا تحذف مستندًا مرحّلًا. صحّحه بمستند عكسي (مرتجع أو إشعار) أو بتعديله إن سمحت صلاحياتك، واكتب سبب التعديل في البيان.</p>
+    </div>
+    <div class="panel" id="mistakeList"></div>
+  </section>
+
+  <!-- ===================== السالب ===================== -->
+  <section class="view" id="v-negative" hidden>
+    <div class="stack">
+      <h1>الأصناف بالسالب</h1>
+      <p class="lead">الرصيد السالب معناه أن النظام سجّل خروج كمية أكبر مما سجّل دخولها. البضاعة لا تكون سالبة على الرف، فالخطأ دائمًا في التسجيل.</p>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <h2>لماذا هو مشكلة</h2>
+        <ul>
+          <li>تكلفة البيع تُحسب خطأ (صفر أو تكلفة قديمة)، فيظهر الربح أعلى أو أقل من الحقيقة.</li>
+          <li>متوسط تكلفة الصنف يتشوّه عند دخول أول فاتورة شراء بعد السالب.</li>
+          <li>قيمة المخزون في الميزانية تصبح غير صحيحة.</li>
+          <li>الجرد الفعلي لن يطابق النظام، وتضيع الفروقات الحقيقية (عجز أو سرقة) وسط أخطاء الإدخال.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h2>كيف تكتشفها</h2>
+        <ol>
+          <li>افتح تقرير أرصدة المخزون (أو «أصناف تحت الصفر» إن وُجد) لكل مخزن على حدة.</li>
+          <li>رتّب حسب الكمية تصاعديًا، فتظهر السوالب أولًا.</li>
+          <li>لكل صنف سالب افتح «حركة الصنف» أو «كرت الصنف» من أول الفترة.</li>
+          <li>حدّد أول حركة جعلت الرصيد تحت الصفر. هذه نقطة البداية للتشخيص.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>شخّص السبب خطوة بخطوة</h2>
+      <p class="lead">افتح حركة الصنف السالب وأجب عن الأسئلة بالترتيب.</p>
+      <div id="diag" class="stack"></div>
+    </div>
+    <div class="panel">
+      <h2>قواعد المعالجة</h2>
+      <ul>
+        <li>صحّح المستند الذي سبّب الخطأ أولًا. التسوية الجردية هي الحل الأخير وليست الأول.</li>
+        <li>لا تُدخل فاتورة شراء وهمية لتغطية السالب. هذا يخلق دَينًا لمورد غير موجود.</li>
+        <li>بعد التصحيح شغّل «إعادة احتساب التكلفة» إن وُجدت في النظام، لتُصحَّح تكلفة المبيعات السابقة.</li>
+        <li>اطلب من الإدارة تفعيل خيار «منع البيع بدون رصيد» إن كان متاحًا، بعد تنظيف الأرصدة.</li>
+        <li>اتفق مع المشتريات على إدخال فاتورة الشراء قبل عرض البضاعة للبيع.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== الأستاذ العام ===================== -->
+  <section class="view" id="v-ledger" hidden>
+    <div class="stack">
+      <h1>الأستاذ العام</h1>
+      <p class="lead">الأستاذ العام هو سجل كل حساب على حدة: كل ما دخل عليه مدينًا ودائنًا ورصيده. أي فاتورة أو سند تدخله ينتهي هنا. إذا أردت أن تعرف «من أين جاء هذا الرقم؟» فالجواب في كشف الحساب.</p>
+    </div>
+    <div class="panel">
+      <h2>كيف تقرأ كشف حساب</h2>
+      <div class="scroll"><table>
+        <thead><tr><th>التاريخ</th><th>المستند</th><th>البيان</th><th class="n">مدين</th><th class="n">دائن</th><th class="n">الرصيد</th></tr></thead>
+        <tbody>
+          <tr><td>01/11</td><td>رصيد أول المدة</td><td>—</td><td class="n"></td><td class="n"></td><td class="n">5,000.00</td></tr>
+          <tr><td>01/11</td><td>فاتورة مبيعات 1041</td><td>مبيعات نقدية</td><td class="n">2,300.00</td><td class="n"></td><td class="n">7,300.00</td></tr>
+          <tr><td>01/11</td><td>سند صرف 88</td><td>كهرباء</td><td class="n"></td><td class="n">460.00</td><td class="n">6,840.00</td></tr>
+          <tr><td>02/11</td><td>سند صرف 89</td><td>إيداع في البنك</td><td class="n"></td><td class="n">6,000.00</td><td class="n">840.00</td></tr>
+        </tbody></table></div>
+      <p class="note">هذا مثال لحساب الصندوق. كل سطر يشير إلى مستند؛ افتح المستند من الكشف لترى تفاصيله. الرصيد = الرصيد السابق + المدين − الدائن (للحسابات المدينة بطبيعتها).</p>
+    </div>
+    <div class="panel">
+      <h2>فاحص الأرصدة</h2>
+      <p class="lead">اختر الحساب وجهة رصيده كما يظهر في النظام، يخبرك إن كان طبيعيًا أو يدل على خطأ.</p>
+      <div class="fields">
+        <label class="f">الحساب<select id="lg-acc"></select></label>
+        <label class="f">الرصيد الظاهر<select id="lg-side"><option value="d">مدين</option><option value="c">دائن</option></select></label>
+      </div>
+      <div id="lg-out" class="stack"></div>
+    </div>
+    <div class="panel">
+      <h2>طبيعة الحسابات</h2>
+      <div class="scroll"><table>
+        <thead><tr><th>المجموعة</th><th>أمثلة</th><th>طبيعتها</th><th>تزيد بـ</th><th>تنقص بـ</th></tr></thead>
+        <tbody>
+          <tr><td>الأصول</td><td>الصندوق، البنك، العملاء، المخزون</td><td class="dr-t">مدينة</td><td>المدين</td><td>الدائن</td></tr>
+          <tr><td>الالتزامات</td><td>الموردون، ضريبة مستحقة، قروض</td><td class="cr-t">دائنة</td><td>الدائن</td><td>المدين</td></tr>
+          <tr><td>حقوق الملكية</td><td>رأس المال، الأرباح المبقاة</td><td class="cr-t">دائنة</td><td>الدائن</td><td>المدين</td></tr>
+          <tr><td>الإيرادات</td><td>المبيعات</td><td class="cr-t">دائنة</td><td>الدائن</td><td>المدين</td></tr>
+          <tr><td>المصروفات</td><td>تكلفة المبيعات، رواتب، إيجار</td><td class="dr-t">مدينة</td><td>المدين</td><td>الدائن</td></tr>
+        </tbody></table></div>
+    </div>
+    <div class="panel">
+      <h2>مراجعة أسبوعية للأستاذ</h2>
+      <ul>
+        <li>ميزان المراجعة: مجموع المدين يساوي مجموع الدائن. إن لم يتساويا فهناك قيد غير مرحّل أو خلل يُرفع للدعم الفني.</li>
+        <li>مرّ على كل حساب رصيده عكس طبيعته، وافحصه بالفاحص أعلاه.</li>
+        <li>حسابات وسيطة (شبكة تحت التحصيل، نقدية بالطريق) يجب أن تقترب من الصفر بعد التسويات.</li>
+        <li>ابحث عن حساب باسم «معلّق» أو «فروقات» أو «تسويات»؛ أي رصيد فيه يحتاج تفسيرًا.</li>
+        <li>قارن إجمالي أرصدة العملاء في الأستاذ مع تقرير أعمار الديون، وإجمالي المخزون مع تقرير تقييم المخزون.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== الأساسيات ===================== -->
+  <section class="view" id="v-basics" hidden>
+    <div class="stack">
+      <h1>أساسيات المحاسبة</h1>
+      <p class="lead">ما تحتاج فهمه قبل أن تثق بأي رقم في النظام.</p>
+    </div>
+    <div class="panel">
+      <h2>المعادلة المحاسبية</h2>
+      <div class="eq">الأصول = الالتزامات + حقوق الملكية</div>
+      <p>كل ما تملكه المنشأة (أصول) مموَّل إما من الغير (التزامات) أو من أصحابها (حقوق ملكية). كل عملية تُبقي المعادلة متوازنة، ولهذا كل قيد له طرفان متساويان.</p>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <h2>المدين والدائن</h2>
+        <p><span class="dr-t">المدين</span> هو الطرف الذي أخذ القيمة، و<span class="cr-t">الدائن</span> هو الطرف الذي أعطاها.</p>
+        <ul>
+          <li>بعت نقدًا: الصندوق أخذ النقد (مدين)، والمبيعات أعطت (دائن).</li>
+          <li>اشتريت بالآجل: المخزون أخذ البضاعة (مدين)، والمورد أعطاها (دائن).</li>
+          <li>دفعت إيجارًا: مصروف الإيجار أخذ (مدين)، والصندوق أعطى (دائن).</li>
+        </ul>
+        <p class="note">المدين والدائن ليسا «جيد» و«سيئ». هما فقط جهتا القيد.</p>
+      </div>
+      <div class="panel">
+        <h2>الدورة المحاسبية</h2>
+        <div class="flow"><span>المستند</span><i>←</i><span>قيد اليومية</span><i>←</i><span>الأستاذ العام</span><i>←</i><span>ميزان المراجعة</span><i>←</i><span>القوائم المالية</span></div>
+        <p>في النظام أنت تدخل المستند فقط (فاتورة، سند)، والنظام يولّد القيد ويرحّله للأستاذ. لذلك صحة التقارير كلها تعتمد على صحة المستند.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>الدليل المحاسبي (شجرة الحسابات)</h2>
+      <div class="scroll"><table>
+        <thead><tr><th>الرقم</th><th>المجموعة</th><th>ما يندرج تحتها</th><th>تظهر في</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>الأصول</td><td>صندوق، بنوك، شبكة تحت التحصيل، عملاء، مخزون، أصول ثابتة</td><td>الميزانية</td></tr>
+          <tr><td>2</td><td>الالتزامات</td><td>موردون، ضريبة القيمة المضافة، رواتب مستحقة</td><td>الميزانية</td></tr>
+          <tr><td>3</td><td>حقوق الملكية</td><td>رأس المال، جاري الشريك، أرباح مبقاة</td><td>الميزانية</td></tr>
+          <tr><td>4</td><td>الإيرادات</td><td>مبيعات، مردودات مبيعات، خصم مسموح به</td><td>قائمة الدخل</td></tr>
+          <tr><td>5</td><td>المصروفات</td><td>تكلفة المبيعات، رواتب، إيجار، عمولات بنكية</td><td>قائمة الدخل</td></tr>
+        </tbody></table></div>
+      <p class="note">الترقيم يختلف من منشأة لأخرى. اطبع الدليل المحاسبي من نظامك واحتفظ به أمامك.</p>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <h2>ضريبة القيمة المضافة</h2>
+        <ul>
+          <li><b>ضريبة المخرجات:</b> ما تحصّله من العميل في فاتورة البيع. التزام عليك للهيئة (دائنة).</li>
+          <li><b>ضريبة المدخلات:</b> ما تدفعه للمورد في فاتورة الشراء. حق لك تستردّه (مدينة).</li>
+          <li>المستحق للهيئة = المخرجات − المدخلات.</li>
+          <li>من مبلغ شامل 15%: الصافي = المبلغ ÷ 1.15، والضريبة = المبلغ − الصافي.</li>
+          <li>ضريبة المدخلات لا تُقبل بدون فاتورة ضريبية صحيحة فيها الرقم الضريبي للمورد.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h2>المخزون وتكلفة المبيعات</h2>
+        <ul>
+          <li>عند الشراء: تزيد كمية الصنف وقيمته في حساب المخزون.</li>
+          <li>عند البيع: النظام يسجّل قيدين. قيد البيع (إيراد)، وقيد التكلفة: تكلفة المبيعات مدين، المخزون دائن.</li>
+          <li>مجمل الربح = المبيعات − تكلفة المبيعات.</li>
+          <li>أغلب الأنظمة تستخدم «المتوسط المرجّح» لتسعير التكلفة، ولهذا ترتيب تواريخ الشراء والبيع يؤثر في الربح.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>مشاكل المحاسبة التي ستقابلها</h2>
+      <div id="problemList"></div>
+    </div>
+  </section>
+
+  <!-- ===================== الإقفال ===================== -->
+  <section class="view" id="v-closing" hidden>
+    <div class="stack">
+      <h1>الإقفال والمراجعة</h1>
+      <p class="lead">قوائم مراجعة أسبوعية وشهرية. العلامات تُحفظ على هذا الجهاز فقط.</p>
+    </div>
+    <div class="grid2">
+      <div class="panel"><div class="row"><h2>أسبوعيًا</h2><button class="btn ghost" data-reset="w" type="button">إعادة</button></div><div id="weekChecks"></div></div>
+      <div class="panel"><div class="row"><h2>نهاية الشهر</h2><button class="btn ghost" data-reset="m" type="button">إعادة</button></div><div id="monthChecks"></div></div>
+    </div>
+  </section>
+
+  <!-- ===================== المصطلحات ===================== -->
+  <section class="view" id="v-glossary" hidden>
+    <div class="stack">
+      <h1>المصطلحات</h1>
+      <label class="f" style="max-width:360px">ابحث عن مصطلح<input class="txt" id="gl-q" type="search" placeholder="مثال: إشعار دائن"></label>
+    </div>
+    <div class="panel"><dl class="kv" id="glList"></dl><p class="lead" id="glEmpty" hidden>لا يوجد مصطلح بهذا الاسم.</p></div>
+  </section>
+  </main>
+</div>
+
+<script>
+(function(){
+"use strict";
+document.documentElement.lang="ar"; document.documentElement.dir="rtl";
+var $=function(id){return document.getElementById(id)};
+
+/* ---------- تخزين محلي آمن ---------- */
+var KEY="mohaseb-v1", store={};
+try{ store=JSON.parse(localStorage.getItem(KEY)||"{}")||{} }catch(e){ store={} }
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(store)) }catch(e){} }
+
+/* ---------- أرقام ---------- */
+function num(v){
+  v=String(v==null?"":v).replace(/[٠-٩]/g,function(d){return "٠١٢٣٤٥٦٧٨٩".indexOf(d)})
+    .replace(/[۰-۹]/g,function(d){return "۰۱۲۳۴۵۶۷۸۹".indexOf(d)}).replace(/٫/g,".").replace(/[٬,\s]/g,"");
+  var n=parseFloat(v); return isFinite(n)?n:0;
+}
+function fmt(n){ return (Math.round(n*100)/100).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}) }
+function near(a,b){ return Math.abs(a-b)<0.005 }
+
+/* ---------- التنقل ---------- */
+var VIEWS=["today","guide","mistakes","negative","ledger","basics","closing","glossary"];
+function route(){
+  var h=(location.hash||"").replace("#",""); if(VIEWS.indexOf(h)<0) h="today";
+  VIEWS.forEach(function(v){ $("v-"+v).hidden=(v!==h) });
+  Array.prototype.forEach.call($("nav").querySelectorAll("a"),function(a){
+    if(a.getAttribute("href")==="#"+h) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");
+  });
+  window.scrollTo(0,0);
+}
+window.addEventListener("hashchange",route);
+
+/* ---------- رسم قيد ---------- */
+function entryHTML(lines){
+  var h="<thead><tr><th>الحساب</th><th class='n'>مدين</th><th class='n'>دائن</th></tr></thead><tbody>";
+  lines.forEach(function(l){
+    var cls=l.diff?" class='diff'":"";
+    if(l.d!=null) h+="<tr"+cls+"><td class='dr'>"+l.a+"</td><td class='n'>"+l.d+"</td><td class='n'></td></tr>";
+    else h+="<tr"+cls+"><td class='cr'>"+l.a+"</td><td class='n'></td><td class='n'>"+l.c+"</td></tr>";
+  });
+  return h+"</tbody>";
+}
+
+/* ===================== مطابقة اليوم ===================== */
+var FIELDS=["total","cash","net","trf","crd","vat","float","ret","exp","count","slip"];
+var SAMPLE={total:"18,400.00",cash:"6,210.00",net:"8,050.00",trf:"1,840.00",crd:"2,070.00",vat:"15",float:"500.00",ret:"115.00",exp:"230.00",count:"6,365.00",slip:"8,165.00"};
+var isSample=!store.recon;
+var vals=store.recon||SAMPLE;
+FIELDS.forEach(function(f){ $("r-"+f).value=vals[f]!=null?vals[f]:"" });
+
+function st(kind,title,text){ return "<div class='status "+kind+"'><b>"+title+"</b><span>"+text+"</span></div>" }
+
+function recon(){
+  var v={}; FIELDS.forEach(function(f){ v[f]=num($("r-"+f).value) });
+  $("exTag").hidden=!isSample;
+  var out="", methods=v.cash+v.net+v.trf+v.crd, d1=methods-v.total;
+  if(v.total===0 && methods===0){ $("recon").innerHTML="<p class='lead'>أدخل إجمالي المبيعات وطرق الدفع لتظهر المطابقة.</p>"; $("dayEntry").innerHTML=""; $("vatTable").innerHTML=""; return; }
+
+  // 1) طرق الدفع مقابل الإجمالي
+  if(near(d1,0)) out+=st("ok","طرق الدفع","مجموع طرق الدفع "+fmt(methods)+" يساوي إجمالي المبيعات.");
+  else if(d1<0) out+=st("bad","طرق الدفع","ينقص "+fmt(-d1)+" عن إجمالي المبيعات. هناك فواتير لم تُحدَّد طريقة دفعها أو مبلغ لم يُحصَّل. اطلب قائمة الفواتير حسب طريقة الدفع وابحث عن فاتورة بهذا المبلغ، أو عن فاتورة آجلة لم تُسجَّل على عميل.");
+  else out+=st("bad","طرق الدفع","تزيد "+fmt(d1)+" عن إجمالي المبيعات. راجع: تحصيل دَين قديم أُدخل ضمن مبيعات اليوم (مكانه سند قبض)، أو عملية شبكة تكررت، أو فاتورة أُلغيت بعد التحصيل.");
+
+  // 2) الصندوق
+  var expCash=v.float+v.cash-v.ret-v.exp, d2=v.count-expCash;
+  if(v.count===0) out+=st("warn","الصندوق","النقد المتوقع في الصندوق "+fmt(expCash)+". أدخل النقد المعدود فعليًا للمقارنة.");
+  else if(near(d2,0)) out+=st("ok","الصندوق","النقد المعدود يساوي المتوقع "+fmt(expCash)+".");
+  else if(d2<0) out+=st("bad","عجز صندوق","المعدود أقل من المتوقع بـ "+fmt(-d2)+". راجع: مصروف دُفع بلا سند، مرتجع نقدي لم يُسجَّل، باقي أُعطي خطأ، أو فاتورة شبكة سُجّلت نقدًا. إن لم يظهر السبب يُحمَّل على الكاشير بسند حسب سياسة المنشأة.");
+  else out+=st("warn","زيادة صندوق","المعدود أكثر من المتوقع بـ "+fmt(d2)+". غالبًا بيع نقدي لم تُصدر له فاتورة، أو فاتورة نقدية سُجّلت شبكة أو آجل. لا تُخرج الزيادة من الصندوق؛ ابحث عن الفاتورة الناقصة.");
+
+  // 3) الشبكة
+  var d3=v.slip-v.net;
+  if(v.slip===0) out+=st("warn","الشبكة","أدخل إجمالي موازنة جهاز الشبكة لمقارنته بمبيعات الشبكة "+fmt(v.net)+".");
+  else if(near(d3,0)) out+=st("ok","الشبكة","موازنة الجهاز تساوي مبيعات الشبكة في التقرير.");
+  else if(d3>0) out+=st("bad","الشبكة","الجهاز حصّل "+fmt(d3)+" أكثر من المسجّل شبكة. غالبًا فاتورة دُفعت بالبطاقة وسُجّلت نقدًا أو آجل. قارن ذلك مع فرق الصندوق: عجز بنفس المبلغ يؤكد السبب.");
+  else out+=st("bad","الشبكة","الجهاز حصّل "+fmt(-d3)+" أقل من المسجّل شبكة. غالبًا فاتورة سُجّلت شبكة والعميل دفع نقدًا أو لم تنجح العملية. طابق إيصالات الجهاز مع الفواتير واحدة واحدة.");
+
+  // 4) ربط الفرقين
+  if(!near(d2,0) && !near(d3,0) && v.count>0 && v.slip>0 && near(d2,-d3))
+    out+=st("warn","ربط","فرق الصندوق وفرق الشبكة متساويان ومتعاكسان ("+fmt(Math.abs(d2))+"). هذا يعني أن فاتورة واحدة أو أكثر سُجّلت بطريقة دفع خطأ. عدّل طريقة الدفع في الفاتورة ولا تسجّل عجزًا أو زيادة.");
+
+  if(v.trf>0) out+=st("warn","التحويلات","لا تعتمد صورة الحوالة من العميل. تأكد من وصول "+fmt(v.trf)+" في كشف البنك حوالةً حوالة قبل اعتمادها.");
+  if(v.crd>0) out+=st("warn","الآجل","تأكد أن كل فاتورة آجلة ("+fmt(v.crd)+") مسجّلة على العميل الصحيح، وأن لها توقيع استلام، وأن العميل لم يتجاوز حدّه الائتماني.");
+  $("recon").innerHTML=out;
+
+  // القيد
+  var rate=v.vat/100, netSales=v.total/(1+rate), vat=v.total-netSales, lines=[];
+  if(v.cash) lines.push({a:"الصندوق",d:fmt(v.cash)});
+  if(v.net) lines.push({a:"شبكة تحت التحصيل",d:fmt(v.net)});
+  if(v.trf) lines.push({a:"البنك",d:fmt(v.trf)});
+  if(v.crd) lines.push({a:"العملاء",d:fmt(v.crd)});
+  lines.push({a:"المبيعات",c:fmt(netSales)});
+  if(vat>0.004) lines.push({a:"ضريبة القيمة المضافة – مخرجات",c:fmt(vat)});
+  if(!near(d1,0)) lines.push(d1<0?{a:"فرق غير مفسَّر – القيد غير متوازن",d:fmt(-d1),diff:1}:{a:"فرق غير مفسَّر – القيد غير متوازن",c:fmt(d1),diff:1});
+  $("dayEntry").innerHTML=entryHTML(lines);
+
+  $("vatTable").innerHTML="<tbody>"+
+    "<tr><td>إجمالي المبيعات شامل الضريبة</td><td class='n'>"+fmt(v.total)+"</td></tr>"+
+    "<tr><td>صافي المبيعات قبل الضريبة</td><td class='n'>"+fmt(netSales)+"</td></tr>"+
+    "<tr><td>ضريبة المخرجات ("+v.vat+"%)</td><td class='n'>"+fmt(vat)+"</td></tr></tbody>"+
+    "<tfoot><tr><td colspan='2' style='border:0;color:var(--muted);font-size:13px'>الحساب يفترض أن كل المبيعات خاضعة للنسبة نفسها. إن وُجدت أصناف معفاة أو صفرية فاعتمد رقم الضريبة من تقرير النظام.</td></tr></tfoot>";
+}
+FIELDS.forEach(function(f){
+  $("r-"+f).addEventListener("input",function(){
+    isSample=false; store.recon={}; FIELDS.forEach(function(k){ store.recon[k]=$("r-"+k).value }); save(); recon();
+  });
+});
+$("clearBtn").addEventListener("click",function(){
+  FIELDS.forEach(function(f){ $("r-"+f).value=(f==="vat")?"15":"" });
+  isSample=false; store.recon={}; FIELDS.forEach(function(k){ store.recon[k]=$("r-"+k).value }); save(); recon(); $("r-total").focus();
+});
+
+/* ---------- قوائم المراجعة ---------- */
+var CHECKS={
+ d:["استلم من المبيعات: الفواتير، تقرير المبيعات اليومي، إيصال موازنة الشبكة، إشعارات التحويل، والنقد.",
+    "تأكد من تسلسل أرقام الفواتير: لا رقم ناقص ولا مكرر. اسأل عن كل فاتورة ملغاة واطلب أصلها.",
+    "عُدّ النقد بحضور الكاشير ووقّعا معًا على محضر الاستلام.",
+    "أدخل الأرقام في «أرقام التقرير» أعلاه وعالج كل فرق يظهر قبل المتابعة.",
+    "طابق إيصال موازنة الشبكة مع مبيعات الشبكة، واحتفظ بالإيصال مع أوراق اليوم.",
+    "طابق كل تحويل بنكي مع كشف البنك (المبلغ، التاريخ، اسم المحوِّل).",
+    "راجع الفواتير الآجلة: العميل الصحيح، التوقيع، الحد الائتماني.",
+    "راجع مرتجعات اليوم: لكل مرتجع فاتورة أصلية وسبب واعتماد، والبضاعة عادت للمخزن فعلًا.",
+    "راجع الخصومات: هل هي ضمن الصلاحية المسموحة للبائع؟",
+    "افتح تقرير الأصناف بالسالب. أي صنف جديد بالسالب يُعالَج اليوم (قسم «الأصناف بالسالب»).",
+    "أدخل سندات الصرف لمصروفات اليوم بفواتيرها.",
+    "أودع النقد في البنك وسجّل الإيداع بسند، وأرفق إشعار الإيداع.",
+    "افتح كشف حساب الصندوق في النظام: رصيده يساوي النقد الموجود فعلًا.",
+    "رتّب أوراق اليوم في ملف واحد بتاريخه."],
+ w:["اطبع ميزان المراجعة وتأكد من توازنه.",
+    "افحص كل حساب رصيده عكس طبيعته (قسم «الأستاذ العام»).",
+    "طابق مبالغ الشبكة الواردة للبنك مع حساب «شبكة تحت التحصيل» وسجّل العمولات.",
+    "راجع أعمار ديون العملاء وتابع المتأخرين مع المبيعات.",
+    "راجع أرصدة الموردين المستحقة وجدول السداد.",
+    "اجرد عيّنة من 10 إلى 20 صنفًا عالية الحركة وقارنها بالنظام.",
+    "تأكد من أخذ نسخة احتياطية من قاعدة البيانات."],
+ m:["أدخل كل فواتير المشتريات والمصروفات الخاصة بالشهر.",
+    "سوِّ البنك: طابق كشف البنك مع حساب البنك في النظام سطرًا بسطر، وفسّر كل فرق.",
+    "اطلب كشوف حساب من الموردين الرئيسيين وطابقها مع أرصدتهم عندك.",
+    "أرسل كشوف حساب للعملاء الآجلين.",
+    "اجرد الصندوق والعُهد النقدية.",
+    "اجرد المخزون (كاملًا أو دوريًا) وسجّل التسويات باعتماد الإدارة.",
+    "تأكد أن لا يوجد صنف بالسالب ولا صنف بتكلفة صفر.",
+    "سجّل الرواتب والمستحقات والإيجار والإهلاك إن وُجد.",
+    "طابق حسابات ضريبة المدخلات والمخرجات مع تقرير الضريبة قبل الإقرار.",
+    "صفِّ الحسابات الوسيطة والمعلّقة.",
+    "اطبع ميزان المراجعة وقائمة الدخل وراجع الأرقام غير المنطقية مقارنةً بالشهر السابق.",
+    "أقفل الفترة في النظام إن كانت الخاصية متاحة، لمنع التعديل بتاريخ قديم."]
+};
+store.checks=store.checks||{};
+function drawChecks(k,host){
+  var h=""; CHECKS[k].forEach(function(t,i){
+    var id="ck-"+k+"-"+i;
+    h+="<label class='check' for='"+id+"'><input type='checkbox' id='"+id+"'"+(store.checks[id]?" checked":"")+"><span>"+t+"</span></label>";
+  });
+  $(host).innerHTML=h;
+  $(host).onchange=function(e){ if(e.target.id){ store.checks[e.target.id]=e.target.checked; save(); } };
+}
+function resetChecks(k,host){ Object.keys(store.checks).forEach(function(id){ if(id.indexOf("ck-"+k+"-")===0) delete store.checks[id] }); save(); drawChecks(k,host); }
+drawChecks("d","dayChecks"); drawChecks("w","weekChecks"); drawChecks("m","monthChecks");
+$("resetDay").addEventListener("click",function(){ resetChecks("d","dayChecks") });
+Array.prototype.forEach.call(document.querySelectorAll("[data-reset]"),function(b){
+  b.addEventListener("click",function(){ var k=b.getAttribute("data-reset"); resetChecks(k,k==="w"?"weekChecks":"monthChecks") });
+});
+
+/* ===================== موجّه العمليات ===================== */
+var X="xxx";
+var OPS=[
+ {g:"مبيعات",t:"فاتورة مبيعات نقدية",w:"العميل دفع كامل المبلغ نقدًا وقت البيع.",
+  e:[{a:"الصندوق",d:X},{a:"المبيعات",c:X},{a:"ضريبة المخرجات",c:X}],
+  s:["شاشة فاتورة المبيعات، نوع الدفع: نقدي.","اختر المخزن الصحيح ثم الأصناف والكميات والوحدة.","تأكد من السعر والخصم والضريبة ثم احفظ واطبع."],
+  c:["المبلغ دخل على حساب الصندوق الصحيح (صندوق الكاشير نفسه).","الكمية خرجت من المخزن الصحيح."]},
+ {g:"مبيعات",t:"فاتورة مبيعات شبكة",w:"العميل دفع بالبطاقة عبر جهاز نقاط البيع البنكي.",
+  e:[{a:"شبكة تحت التحصيل",d:X},{a:"المبيعات",c:X},{a:"ضريبة المخرجات",c:X}],
+  s:["فاتورة مبيعات، نوع الدفع: شبكة.","أدخل الفاتورة بعد نجاح العملية على الجهاز، لا قبلها.","احتفظ بإيصال الجهاز مع نسخة الفاتورة."],
+  c:["مجموع مبيعات الشبكة يساوي موازنة الجهاز آخر اليوم.","المبلغ لا يدخل على البنك مباشرة؛ يدخل على حساب وسيط حتى يودعه البنك."]},
+ {g:"مبيعات",t:"فاتورة مبيعات بتحويل بنكي",w:"العميل حوّل المبلغ إلى حساب المنشأة.",
+  e:[{a:"البنك",d:X},{a:"المبيعات",c:X},{a:"ضريبة المخرجات",c:X}],
+  s:["فاتورة مبيعات، نوع الدفع: تحويل، واختر الحساب البنكي الذي وصلته الحوالة.","اكتب رقم الحوالة المرجعي في البيان."],
+  c:["الحوالة ظاهرة في كشف البنك فعلًا بالمبلغ نفسه.","إن لم تصل بعد، سجّل الفاتورة آجلة على العميل ثم سند قبض عند وصولها."]},
+ {g:"مبيعات",t:"فاتورة مبيعات آجلة",w:"العميل استلم البضاعة وسيدفع لاحقًا.",
+  e:[{a:"العملاء (حساب العميل)",d:X},{a:"المبيعات",c:X},{a:"ضريبة المخرجات",c:X}],
+  s:["فاتورة مبيعات، نوع الدفع: آجل، واختر العميل من القائمة.","لا تنشئ عميلًا جديدًا قبل البحث عنه بالاسم والرقم الضريبي والجوال.","خذ توقيع المستلم على نسخة الفاتورة."],
+  c:["رصيد العميل زاد بقيمة الفاتورة.","العميل ضمن حدّه الائتماني وتاريخ الاستحقاق مسجّل."]},
+ {g:"مبيعات",t:"فاتورة بأكثر من طريقة دفع",w:"العميل دفع جزءًا نقدًا وجزءًا شبكة، أو دفع جزءًا والباقي آجل.",
+  e:[{a:"الصندوق",d:X},{a:"شبكة تحت التحصيل",d:X},{a:"العملاء",d:X},{a:"المبيعات",c:X},{a:"ضريبة المخرجات",c:X}],
+  s:["فاتورة مبيعات واحدة، ووزّع المبلغ على طرق الدفع إن كانت الشاشة تدعم الدفع المتعدد.","إن لم تدعم: سجّلها آجلة على العميل، ثم سند قبض بكل جزء مدفوع."],
+  c:["مجموع الأجزاء يساوي إجمالي الفاتورة.","الباقي ظاهر في رصيد العميل."]},
+ {g:"مبيعات",t:"مرتجع مبيعات",w:"العميل أعاد بضاعة من فاتورة سابقة.",
+  e:[{a:"مردودات المبيعات",d:X},{a:"ضريبة المخرجات",d:X},{a:"الصندوق أو العملاء",c:X}],
+  s:["شاشة مرتجع المبيعات (إشعار دائن) واربطه برقم الفاتورة الأصلية.","اختر الأصناف والكميات المرتجعة فقط.","إن كانت الفاتورة آجلة فالمرتجع يُخصم من رصيد العميل، وإن كانت نقدية فيُرد نقدًا."],
+  c:["البضاعة دخلت المخزن فعلًا وبحالة صالحة.","الكمية عادت للمخزن نفسه الذي خرجت منه.","لا تعالج المرتجع بحذف الفاتورة الأصلية."]},
+ {g:"مبيعات",t:"سند قبض من عميل",w:"عميل آجل سدّد جزءًا أو كل ما عليه.",
+  e:[{a:"الصندوق أو البنك",d:X},{a:"العملاء (حساب العميل)",c:X}],
+  s:["شاشة سند القبض، اختر العميل.","حدّد طريقة الاستلام (نقد، تحويل، شيك) والحساب المستلِم.","اربط السند بالفواتير المسدَّدة إن كانت الشاشة تتيح ذلك."],
+  c:["رصيد العميل نقص بالمبلغ.","لا يُسجَّل التحصيل كفاتورة مبيعات جديدة؛ هذا يضاعف الإيراد."]},
+ {g:"مشتريات",t:"فاتورة مشتريات آجلة",w:"استلمت بضاعة من مورد وستدفع لاحقًا. هذه أكثر حالات الشراء.",
+  e:[{a:"المخزون",d:X},{a:"ضريبة المدخلات",d:X},{a:"الموردون (حساب المورد)",c:X}],
+  s:["شاشة فاتورة المشتريات، اختر المورد.","أدخل رقم وتاريخ فاتورة المورد كما في الأصل.","أدخل الأصناف بالكمية المستلمة فعلًا وبالوحدة الصحيحة وسعر الشراء قبل الضريبة.","اختر المخزن الذي دخلته البضاعة."],
+  c:["إجمالي الفاتورة في النظام يطابق فاتورة المورد بالهللة.","الكميات مطابقة لإذن الاستلام من المخزن.","الرقم الضريبي للمورد موجود على الفاتورة الأصلية."]},
+ {g:"مشتريات",t:"فاتورة مشتريات نقدية",w:"اشتريت ودفعت في الحال من الصندوق أو البنك.",
+  e:[{a:"المخزون",d:X},{a:"ضريبة المدخلات",d:X},{a:"الصندوق أو البنك",c:X}],
+  s:["فاتورة مشتريات، نوع الدفع: نقدي، واختر الصندوق أو البنك الدافع."],
+  c:["المبلغ خرج من الحساب الذي دُفع منه فعلًا.","لا تسجّل شراء بضاعة للبيع كسند صرف مصروف؛ لن تدخل الكمية المخزن."]},
+ {g:"مشتريات",t:"مرتجع مشتريات",w:"أعدت بضاعة للمورد (تالفة، خطأ، زائدة).",
+  e:[{a:"الموردون (حساب المورد)",d:X},{a:"المخزون",c:X},{a:"ضريبة المدخلات",c:X}],
+  s:["شاشة مرتجع المشتريات (إشعار مدين) واربطه بفاتورة الشراء الأصلية.","اطلب من المورد إشعارًا دائنًا رسميًا واحتفظ به."],
+  c:["رصيد المورد نقص.","الكمية خرجت من المخزن."]},
+ {g:"مشتريات",t:"سند صرف لمورد",w:"تسدّد لمورد جزءًا أو كل ما له عندك.",
+  e:[{a:"الموردون (حساب المورد)",d:X},{a:"الصندوق أو البنك",c:X}],
+  s:["شاشة سند الصرف، اختر حساب المورد.","حدّد طريقة الدفع والحساب الدافع ورقم الحوالة أو الشيك.","خذ توقيع المستلم أو أرفق إشعار التحويل."],
+  c:["رصيد المورد نقص بالمبلغ.","السداد لا يتجاوز رصيد المورد إلا إن كان دفعة مقدمة مقصودة."]},
+ {g:"سندات",t:"سند صرف مصروف",w:"دفعت مصروفًا: إيجار، كهرباء، صيانة، نقل، قرطاسية.",
+  e:[{a:"حساب المصروف",d:X},{a:"ضريبة المدخلات (إن وُجدت فاتورة ضريبية)",d:X},{a:"الصندوق أو البنك",c:X}],
+  s:["شاشة سند الصرف، اختر حساب المصروف المناسب من الدليل.","اكتب بيانًا واضحًا: ماذا، لمن، عن أي فترة.","أرفق الفاتورة أو الإيصال."],
+  c:["المصروف على الحساب الصحيح، وليس على «مصروفات متنوعة» إلا للضرورة.","لا صرف بدون مستند واعتماد."]},
+ {g:"سندات",t:"إيداع نقدي في البنك",w:"نقلت نقد المبيعات من الصندوق إلى الحساب البنكي.",
+  e:[{a:"البنك",d:X},{a:"الصندوق",c:X}],
+  s:["سند صرف من الصندوق إلى حساب البنك، أو شاشة التحويل بين الحسابات إن وُجدت.","أرفق إشعار الإيداع."],
+  c:["المبلغ ظهر في كشف البنك.","هذا ليس مصروفًا ولا إيرادًا؛ هو نقل بين حسابين."]},
+ {g:"سندات",t:"تسوية الشبكة مع البنك",w:"البنك أودع مبالغ الشبكة في حسابك بعد خصم عمولته.",
+  e:[{a:"البنك",d:X},{a:"عمولات بنكية",d:X},{a:"ضريبة المدخلات على العمولة",d:X},{a:"شبكة تحت التحصيل",c:X}],
+  s:["من كشف البنك حدّد المبلغ المودَع عن كل يوم شبكة.","سجّل قيدًا أو سند قبض: البنك بالصافي، والعمولة وضريبتها بالفرق، والدائن حساب الشبكة بالإجمالي."],
+  c:["حساب «شبكة تحت التحصيل» يعود قريبًا من الصفر، والباقي فيه فقط مبيعات آخر يوم أو يومين.","أي رصيد قديم فيه معناه عملية لم يودعها البنك أو لم تُسجَّل؛ راجع البنك."]},
+ {g:"سندات",t:"عهدة أو سلفة لموظف",w:"سلّمت موظفًا مبلغًا ليصرف منه أو كسلفة شخصية.",
+  e:[{a:"عُهد / سُلف الموظفين (حساب الموظف)",d:X},{a:"الصندوق",c:X}],
+  s:["سند صرف على حساب الموظف، وليس على المصروفات.","عند تقديم الفواتير: قيد تسوية يحوّل المبلغ من العهدة إلى المصروفات، ويُعاد الباقي بسند قبض."],
+  c:["لا تبقى عُهد مفتوحة لأكثر من شهر بدون تسوية."]},
+ {g:"بيانات أساسية",t:"إضافة صنف جديد",w:"بضاعة جديدة لم تُعرَّف في النظام.",
+  s:["ابحث أولًا بالاسم والباركود حتى لا تكرر الصنف.","شاشة بطاقة الصنف: الاسم، المجموعة، الباركود.","عرّف الوحدات ومعامل التحويل (مثال: كرتون = 12 حبة).","حدّد نوع الضريبة وسعر البيع.","الكمية تدخل بفاتورة شراء أو رصيد افتتاحي، لا بالتعديل اليدوي."],
+  c:["لا يوجد صنف آخر بالاسم نفسه أو قريب منه.","معامل التحويل بين الوحدات صحيح؛ هذا أكثر سبب للأرصدة السالبة."]},
+ {g:"بيانات أساسية",t:"إضافة مورد أو عميل",w:"تتعامل مع جهة جديدة بالآجل.",
+  s:["ابحث أولًا بالاسم والرقم الضريبي لتجنب التكرار.","أدخل: الاسم كما في السجل التجاري، الرقم الضريبي، العنوان، الجوال.","للعميل: حد ائتماني ومدة سداد معتمدان من الإدارة."],
+  c:["تكرار الحساب نفسه باسمين يقسم الرصيد ويخفي الدين الحقيقي."]},
+ {g:"مخزون",t:"تحويل بين المخازن",w:"نقلت بضاعة من مخزن إلى آخر أو إلى المعرض.",
+  s:["شاشة التحويل المخزني: المخزن المحوَّل منه، المحوَّل إليه، الأصناف والكميات.","وقّع المُسلِّم والمستلم على إذن التحويل."],
+  c:["إجمالي كمية الصنف في المنشأة لم يتغير.","بدون هذا المستند يظهر صنف بالسالب في مخزن وزائدًا في آخر."]},
+ {g:"مخزون",t:"تسوية جردية",w:"بعد جرد فعلي ظهر فرق بين العدّ والنظام ولم يُعثر على مستند يفسّره.",
+  e:[{a:"عجز المخزون (مصروف)",d:X},{a:"المخزون",c:X}],
+  s:["اجرد الصنف فعليًا بحضور أمين المخزن.","شاشة التسوية الجردية: أدخل الكمية الفعلية، والنظام يحسب الفرق.","في حالة الزيادة ينعكس القيد: المخزون مدين، وفروقات الجرد دائن."],
+  c:["التسوية باعتماد الإدارة ومحضر جرد موقّع.","بحثت عن السبب المستندي قبل اللجوء إليها."]}
+];
+var opGroups=["الكل"]; OPS.forEach(function(o){ if(opGroups.indexOf(o.g)<0) opGroups.push(o.g) });
+var opSel="الكل";
+function li(arr){ return "<ul>"+arr.map(function(x){return "<li>"+x+"</li>"}).join("")+"</ul>" }
+function drawOps(){
+  $("opFilters").innerHTML=opGroups.map(function(g){ return "<button type='button' class='chip' aria-pressed='"+(g===opSel)+"' data-g='"+g+"'>"+g+"</button>" }).join("");
+  $("opList").innerHTML=OPS.filter(function(o){return opSel==="الكل"||o.g===opSel}).map(function(o){
+    return "<details><summary>"+o.t+" <span class='tag'>"+o.g+"</span></summary><div>"+
+      "<p><b>متى:</b> "+o.w+"</p>"+
+      (o.e?"<h3>القيد</h3><div class='scroll'><table class='entry'>"+entryHTML(o.e)+"</table></div>":"")+
+      "<h3>الخطوات</h3>"+li(o.s)+"<h3>راجع بعد الحفظ</h3>"+li(o.c)+"</div></details>";
+  }).join("");
+}
+$("opFilters").addEventListener("click",function(e){ var g=e.target.getAttribute("data-g"); if(g){ opSel=g; drawOps(); } });
+drawOps();
+
+/* ===================== أخطاء المبيعات ===================== */
+var MIS=[
+ ["طريقة دفع خطأ (شبكة سُجّلت نقدًا أو العكس)","فرق في الصندوق يقابله فرق معاكس بالمبلغ نفسه في موازنة الشبكة.","الصندوق والشبكة لا يطابقان، مع أن إجمالي المبيعات صحيح.","عدّل طريقة الدفع في الفاتورة نفسها. لا تسجّل عجزًا أو زيادة صندوق."],
+ ["بيع آجل سُجّل نقدًا","عجز في الصندوق بقيمة الفاتورة، والعميل لا يظهر عليه دَين.","دَين غير مسجّل قد يضيع.","حوّل الفاتورة إلى آجل على حساب العميل."],
+ ["تحصيل دَين قديم أُدخل كفاتورة مبيعات","مجموع طرق الدفع أكبر من المبيعات الحقيقية، ورصيد العميل لم ينقص.","إيراد وضريبة مضاعفان، ومخزون يخرج مرتين.","ألغِ الفاتورة الخطأ بمرتجع، وسجّل سند قبض على العميل."],
+ ["فاتورة مكررة","فاتورتان بالأصناف والمبلغ والوقت نفسه تقريبًا، وزيادة غير مفسّرة في المبيعات.","مبيعات وضريبة زائدة، وصنف قد يصير بالسالب.","مرتجع مبيعات كامل لإحدى الفاتورتين مع ذكر السبب."],
+ ["صنف خطأ (صنف مشابه)","صنف بالسالب وصنف شبيه له رصيده أعلى من الفعلي بالكمية نفسها.","أرصدة صنفين خطأ وتكلفة بيع خطأ.","عدّل الصنف في الفاتورة، أو مرتجع ثم فاتورة صحيحة."],
+ ["وحدة خطأ (كرتون بدل حبة)","سعر الفاتورة أو كميتها غير منطقية، ورصيد الصنف نزل بقفزة كبيرة.","مخزون وربح مشوّهان بشدة.","عدّل الوحدة في الفاتورة، وراجع معامل التحويل في بطاقة الصنف."],
+ ["مخزن خطأ","الصنف بالسالب في مخزن وموجود في مخزن آخر.","أرصدة المخازن لا تطابق الجرد.","عدّل المخزن في الفاتورة، أو أدخل تحويلًا مخزنيًا إن كان النقل حصل فعلًا."],
+ ["عميل خطأ أو عميل مكرر","عميل يعترض على فاتورة ليست له، أو اسمان متشابهان في قائمة العملاء.","مطالبة خاطئة ودَين مخفي.","انقل الفاتورة للعميل الصحيح. وحّد الحسابين المكررين وأوقف أحدهما."],
+ ["خصم بدون صلاحية","تقرير الخصومات يُظهر نسبة أعلى من المسموح، أو سعر بيع أقل من التكلفة.","خسارة في الهامش.","ارفعه للإدارة. إن اعتُمد يبقى، وإلا يُحمَّل حسب السياسة. اطلب تقييد الخصم بالصلاحيات."],
+ ["تعديل السعر يدويًا","سعر البيع في الفاتورة يختلف عن قائمة الأسعار.","إيراد ناقص أو شكوى عميل.","صحّح السعر بإشعار مدين أو دائن، واطلب قفل تعديل السعر على البائعين."],
+ ["ضريبة خطأ","فاتورة بضريبة صفر لصنف خاضع، أو العكس. تقرير الضريبة لا يساوي 15% من الصافي.","إقرار ضريبي خاطئ وغرامات محتملة.","مرتجع وفاتورة جديدة صحيحة. صحّح نوع الضريبة في بطاقة الصنف."],
+ ["مرتجع بدون ربطه بالفاتورة أو بدون رجوع البضاعة","مرتجع لا يحمل رقم فاتورة أصلية، أو رصيد صنف أعلى من الجرد.","باب للتلاعب، ومخزون وهمي.","اربط المرتجع بفاتورته، وتأكد من إذن استلام المخزن للبضاعة المرتجعة."],
+ ["إلغاء فاتورة بعد تحصيلها","رقم فاتورة ملغى مع زيادة في الصندوق، أو بدون زيادة والمبلغ مفقود.","إيراد غير مسجّل أو اختلاس.","اطلب أصل الفاتورة الملغاة وسبب الإلغاء واعتماده. اطلب حصر صلاحية الإلغاء بالمشرف."],
+ ["تاريخ خطأ","فاتورة بتاريخ أمس أو غدًا ضمن أوراق اليوم.","مبيعات اليوم لا تطابق التقرير، وقد تقع في فترة ضريبية أخرى.","عدّل التاريخ إن كانت الفترة مفتوحة، واطلب منع تغيير التاريخ على البائعين."],
+ ["بيع لم تُصدر له فاتورة","زيادة في الصندوق، أو نقص في الجرد بلا مستند.","إيراد غير مسجّل ومخالفة ضريبية.","أصدر الفاتورة بتاريخ البيع. نبّه البائع كتابيًا."],
+ ["بيع صنف غير مُدخل شراؤه","الصنف ينزل بالسالب مباشرة بعد البيع.","تكلفة بيع صفر وربح وهمي.","أدخل فاتورة الشراء بتاريخها الحقيقي ثم أعد احتساب التكلفة."]
+];
+$("mistakeList").innerHTML=MIS.map(function(m){
+  return "<details><summary>"+m[0]+"</summary><div><dl class='kv'><dt>كيف تكشفه</dt><dd>"+m[1]+"</dd><dt>أثره</dt><dd>"+m[2]+"</dd><dt>التصحيح</dt><dd>"+m[3]+"</dd></dl></div></details>";
+}).join("");
+
+/* ===================== تشخيص السالب ===================== */
+var DIAG=[
+ ["هل توجد فاتورة شراء ورقية لهذا الصنف لم تُدخل في النظام بعد؟","أدخل فاتورة الشراء بتاريخها الحقيقي (قبل تاريخ البيع). ثم أعد احتساب التكلفة."],
+ ["هل فاتورة الشراء مُدخلة لكن بتاريخ بعد تاريخ البيع، أو محفوظة ولم تُرحَّل/تُعتمد؟","صحّح تاريخ فاتورة الشراء أو رحّلها. الرصيد يصير سالبًا مؤقتًا بين التاريخين فقط، لكن التكلفة تتأثر."],
+ ["هل الصنف موجود برصيد موجب في مخزن آخر؟","إما أن البيع سُجّل من مخزن خطأ (عدّل المخزن في الفاتورة)، أو أن البضاعة نُقلت بدون مستند (أدخل تحويلًا مخزنيًا بتاريخ النقل)."],
+ ["هل يوجد صنف مشابه في الاسم أو الباركود رصيده أعلى من الموجود فعليًا؟","البائع اختار الصنف الخطأ، أو الشراء دخل على الصنف الشبيه. صحّح الصنف في المستند المخطئ."],
+ ["هل الكمية السالبة تساوي مضاعفات حجم العبوة (مثل 11 أو 23 أو 12)؟","خطأ وحدة: الشراء دخل بالحبة والبيع بالكرتون أو العكس، أو معامل التحويل في بطاقة الصنف خطأ. صحّح المعامل ثم المستند."],
+ ["هل في حركة الصنف فاتورة مبيعات مكررة أو كمية مكتوبة خطأ (100 بدل 10)؟","صحّح الكمية في الفاتورة، أو اعمل مرتجعًا للفاتورة المكررة."],
+ ["هل أعاد عميل هذا الصنف ولم يُسجَّل مرتجع مبيعات؟","سجّل مرتجع المبيعات مربوطًا بالفاتورة الأصلية."],
+ ["هل الصنف كان موجودًا قبل بدء استخدام النظام ولم يُدخل له رصيد افتتاحي؟","أدخل الرصيد الافتتاحي بالكمية والتكلفة في تاريخ بداية الفترة."],
+ ["هل الصنف يُجمَّع أو يُصنَّع من أصناف أخرى (طقم، عرض، تعبئة)؟","سجّل أمر التجميع أو التصنيع الذي يُدخل الصنف النهائي ويُخرج مكوناته."]
+];
+var diagI=0, diagHit=false;
+function drawDiag(){
+  var h="";
+  if(diagI>=DIAG.length){
+    h=st("warn","لم يظهر سبب مستندي","اجرد الصنف فعليًا الآن في كل المخازن. إن كان العدّ الفعلي أكبر من رصيد النظام فسجّل تسوية جردية بالزيادة باعتماد الإدارة ومحضر موقّع، ودوّن في البيان أن السبب غير محدد. ثم راقب الصنف أسبوعًا.");
+  } else if(diagHit){
+    h=st("ok","الحل",DIAG[diagI][1])+"<p class='lead'>بعد التصحيح افتح حركة الصنف مرة أخرى. إن بقي الرصيد سالبًا فأكمل الفحص، فقد يجتمع أكثر من سبب.</p>";
+  } else {
+    h="<p><b>"+(diagI+1)+" من "+DIAG.length+":</b> "+DIAG[diagI][0]+"</p>";
+  }
+  h+="<div class='row'>";
+  if(diagI<DIAG.length && !diagHit) h+="<button class='btn' type='button' data-a='yes'>نعم</button><button class='btn ghost' type='button' data-a='no'>لا، التالي</button>";
+  if(diagHit) h+="<button class='btn ghost' type='button' data-a='no'>أكمل الفحص</button>";
+  if(diagI>0||diagHit) h+="<button class='btn ghost' type='button' data-a='re'>ابدأ من جديد</button>";
+  $("diag").innerHTML=h+"</div>";
+}
+$("diag").addEventListener("click",function(e){
+  var a=e.target.getAttribute("data-a"); if(!a) return;
+  if(a==="yes") diagHit=true; else if(a==="no"){ diagHit=false; diagI++; } else { diagI=0; diagHit=false; }
+  drawDiag();
+});
+drawDiag();
+
+/* ===================== فاحص الأرصدة ===================== */
+var ACC=[
+ {n:"الصندوق",nat:"d",bad:"الصندوق لا يكون دائنًا أبدًا، فلا يمكن صرف نقد غير موجود. الأسباب: سند صرف أُدخل قبل تسجيل المبيعات أو سند القبض، مبيعات نقدية لم تُرحَّل، سند صرف مكرر، أو مبلغ صُرف من صندوق آخر وسُجّل على هذا.",ok:"طبيعي. تأكد فقط أن الرصيد يساوي النقد المعدود فعلًا."},
+ {n:"البنك",nat:"d",bad:"دائن معناه سحب على المكشوف، أو خطأ: دفعات مسجّلة لم تقابلها إيداعات، إيداع لم يُسجَّل، أو تحويل سُجّل على حساب بنكي آخر. طابق مع كشف البنك.",ok:"طبيعي. طابقه مع كشف البنك شهريًا."},
+ {n:"شبكة تحت التحصيل",nat:"d",bad:"دائن معناه أن إيداعات البنك المسجّلة أكبر من مبيعات الشبكة المسجّلة: فاتورة شبكة سُجّلت نقدًا، أو إيداع سُجّل مرتين.",ok:"طبيعي إن كان يساوي مبيعات آخر يوم أو يومين. رصيد كبير أو قديم معناه إيداعات لم تُسجَّل أو عمولات لم تُقيَّد."},
+ {n:"عميل",nat:"d",bad:"دائن معناه أن العميل دفع أكثر مما عليه: دفعة مقدمة حقيقية، أو سند قبض سُجّل على عميل خطأ، أو فاتورة آجلة سُجّلت نقدًا ثم حُصّلت بسند قبض، أو مرتجع مكرر.",ok:"طبيعي. راقب عمر الدَّين وحد الائتمان."},
+ {n:"المخزون",nat:"d",bad:"دائن معناه أن قيمة ما خرج أكبر مما دخل: أصناف بالسالب، مشتريات لم تُدخل، أو تكلفة احتُسبت خطأ. عالج الأصناف السالبة أولًا.",ok:"طبيعي. قارنه بتقرير تقييم المخزون؛ يجب أن يتساويا."},
+ {n:"مورد",nat:"c",bad:"مدين معناه أنك دفعت له أكثر مما له: دفعة مقدمة حقيقية، أو فاتورة شراء لم تُدخل، أو سند صرف سُجّل على مورد خطأ أو مكرر، أو مرتجع مشتريات مكرر.",ok:"طبيعي. طابقه مع كشف حساب المورد."},
+ {n:"ضريبة المخرجات",nat:"c",bad:"مدين غير طبيعي إلا إذا كانت المرتجعات أكبر من المبيعات في الفترة. راجع قيود يدوية خاطئة على الحساب.",ok:"طبيعي. يجب أن يساوي ضريبة المبيعات في تقرير الضريبة."},
+ {n:"ضريبة المدخلات",nat:"d",bad:"دائن غير طبيعي إلا إذا كانت مرتجعات المشتريات أكبر من المشتريات. راجع القيود اليدوية.",ok:"طبيعي. يجب أن يساوي ضريبة المشتريات في تقرير الضريبة."},
+ {n:"المبيعات",nat:"c",bad:"مدين غير طبيعي: مرتجعات سُجّلت على حساب المبيعات مباشرة وتجاوزته، أو قيد يدوي معكوس.",ok:"طبيعي."},
+ {n:"حساب مصروف",nat:"d",bad:"دائن غير طبيعي: استرداد مصروف أكبر من المصروف نفسه، أو قيد معكوس، أو إيراد سُجّل على حساب مصروف.",ok:"طبيعي. قارنه بالشهر السابق؛ قفزة كبيرة تستحق فتح الكشف."},
+ {n:"عهدة / سلفة موظف",nat:"d",bad:"دائن معناه أن الموظف صرف من جيبه أكثر من العهدة وله مستحق، أو تسوية سُجّلت مرتين.",ok:"طبيعي، لكن يجب أن يُسوّى دوريًا ولا يبقى مفتوحًا لأشهر."}
+];
+$("lg-acc").innerHTML=ACC.map(function(a,i){return "<option value='"+i+"'>"+a.n+"</option>"}).join("");
+function drawLg(){
+  var a=ACC[+$("lg-acc").value], side=$("lg-side").value, natTxt=a.nat==="d"?"مدينة":"دائنة";
+  $("lg-out").innerHTML=(side===a.nat?st("ok","طبيعي",a.ok):st("bad","عكس طبيعته",a.bad))+
+    "<p class='lead'>طبيعة هذا الحساب "+natTxt+". للتتبع: افتح كشف الحساب، وابحث عن أول سطر انقلب عنده الرصيد، ثم افتح مستنده.</p>";
+}
+$("lg-acc").addEventListener("change",drawLg); $("lg-side").addEventListener("change",drawLg); drawLg();
+
+/* ===================== مشاكل عامة ===================== */
+var PROBS=[
+ ["ميزان المراجعة غير متوازن","في نظام محاسبي لا يحصل هذا إلا بسبب قيد غير مرحّل، أو فترة غير مكتملة في التقرير، أو خلل تقني. تأكد من نطاق التاريخ ومن ترحيل كل المستندات، ثم راجع الدعم الفني."],
+ ["رصيد البنك في النظام لا يساوي كشف البنك","طبيعي أن يختلفا مؤقتًا. اعمل تسوية بنكية: علّم كل سطر موجود في الطرفين، والباقي إما عمولات لم تسجّلها، أو شبكة لم تودَع، أو شيكات لم تُصرف، أو خطأ إدخال."],
+ ["رصيد المورد عندك يختلف عن كشف المورد","اطلب كشف حسابه وطابق سطرًا بسطر. الأسباب المعتادة: فاتورة لم تصلك، دفعة لم يسجّلها هو، مرتجع بلا إشعار دائن، أو فاتورة أدخلتها مرتين."],
+ ["الربح يبدو أعلى أو أقل من المعقول","افحص: أصناف بالسالب أو بتكلفة صفر، فواتير شراء غير مُدخلة، وحدة أو سعر شراء خطأ، مصروفات لم تُسجَّل، أو جرد لم يُسوَّ."],
+ ["مصروف سُجّل على حساب خطأ","لا تحذف السند. اعمل قيد تسوية ينقل المبلغ من الحساب الخطأ إلى الصحيح، واكتب السبب."],
+ ["مستند بتاريخ في فترة مقفلة أو قديمة","يغيّر تقارير سبق اعتمادها أو إقرارًا ضريبيًا قُدّم. لا تعدّل في فترة قُدّم إقرارها؛ صحّح بقيد في الفترة الحالية واستشر المحاسب القانوني."],
+ ["شراء أصل ثابت سُجّل كمصروف (أو العكس)","جهاز أو أثاث يُستخدم لسنوات يُسجَّل أصلًا ثابتًا ويُهلك، لا مصروفًا دفعة واحدة. انقله بقيد تسوية."],
+ ["خلط مصروفات المالك الشخصية بالمنشأة","ما يسحبه المالك لنفسه يُسجَّل على «جاري المالك» أو «المسحوبات»، لا على مصروفات المنشأة."],
+ ["حسابات معلّقة تتراكم","أي مبلغ لا تعرف مكانه يوضع مؤقتًا في حساب معلّق، بشرط أن يُصفّى قبل نهاية الشهر. رصيد معلّق قديم هو خطأ مؤجَّل."],
+ ["الاعتماد على الذاكرة بدل المستند","لا قيد بلا مستند، ولا مستند بلا بيان واضح. بعد ستة أشهر لن يتذكر أحد لماذا صُرف المبلغ."]
+];
+$("problemList").innerHTML=PROBS.map(function(p){ return "<details><summary>"+p[0]+"</summary><div><p>"+p[1]+"</p></div></details>" }).join("");
+
+/* ===================== المصطلحات ===================== */
+var GL=[
+ ["قيد اليومية","تسجيل عملية مالية بطرفين متساويين: مدين ودائن."],
+ ["الترحيل","نقل القيد من اليومية إلى حساباته في الأستاذ العام. مستند غير مرحّل لا يؤثر في الأرصدة."],
+ ["الأستاذ العام","سجل كل الحسابات وحركاتها وأرصدتها."],
+ ["الأستاذ المساعد","تفصيل حساب إجمالي: كشف كل عميل أو مورد على حدة."],
+ ["ميزان المراجعة","قائمة بأرصدة كل الحسابات؛ مجموع المدين يجب أن يساوي مجموع الدائن."],
+ ["الدليل المحاسبي","شجرة الحسابات المرقّمة التي تُسجَّل عليها العمليات."],
+ ["سند قبض","مستند يثبت استلام مبلغ (من عميل مثلًا)."],
+ ["سند صرف","مستند يثبت دفع مبلغ (لمورد أو مصروف)."],
+ ["قيد تسوية","قيد يدوي لتصحيح خطأ أو لإثبات شيء لا يغطيه مستند آخر."],
+ ["إشعار دائن","مستند يخفّض ما على العميل؛ يُستخدم للمرتجع أو الخصم بعد الفاتورة."],
+ ["إشعار مدين","مستند يزيد ما على العميل، أو يخفّض ما للمورد عند مرتجع المشتريات."],
+ ["آجل","بيع أو شراء يُدفع ثمنه لاحقًا."],
+ ["ذمم مدينة","مبالغ مستحقة للمنشأة على عملائها."],
+ ["ذمم دائنة","مبالغ مستحقة على المنشأة لمورديها."],
+ ["شبكة تحت التحصيل","حساب وسيط لمبيعات البطاقات حتى يودعها البنك."],
+ ["موازنة الشبكة","إقفال جهاز البطاقات آخر اليوم وطباعة إجمالي عملياته."],
+ ["تسوية بنكية","مطابقة حساب البنك في النظام مع كشف البنك وتفسير الفروقات."],
+ ["تكلفة المبيعات","تكلفة شراء البضاعة التي بيعت خلال الفترة."],
+ ["مجمل الربح","المبيعات ناقص تكلفة المبيعات."],
+ ["صافي الربح","مجمل الربح ناقص المصروفات."],
+ ["المتوسط المرجّح","طريقة تسعير المخزون: إجمالي قيمة الصنف ÷ إجمالي كميته."],
+ ["رصيد افتتاحي","رصيد الحساب أو الصنف عند بداية الفترة أو بداية استخدام النظام."],
+ ["تسوية جردية","مستند يعدّل كمية الصنف في النظام لتطابق الجرد الفعلي."],
+ ["كرت الصنف","كشف حركة الصنف: كل ما دخل وخرج ورصيده بعد كل حركة."],
+ ["معامل التحويل","عدد الوحدات الصغرى في الوحدة الكبرى (كرتون = 12 حبة)."],
+ ["ضريبة المخرجات","الضريبة المحصَّلة من العملاء على المبيعات."],
+ ["ضريبة المدخلات","الضريبة المدفوعة للموردين على المشتريات، وتُخصم من المخرجات."],
+ ["فاتورة ضريبية مبسطة","فاتورة للأفراد تحمل رمز QR دون بيانات المشتري التفصيلية."],
+ ["أعمار الديون","تقرير يصنّف ديون العملاء حسب مدة تأخرها."],
+ ["حد ائتماني","أقصى دَين يُسمح به للعميل."],
+ ["عهدة","مبلغ يُسلَّم لموظف ليصرف منه ثم يقدّم فواتيره."],
+ ["إهلاك","توزيع تكلفة الأصل الثابت على سنوات استخدامه."],
+ ["مستحقات","مصروفات تخص الفترة ولم تُدفع بعد (رواتب آخر الشهر مثلًا)."],
+ ["إقفال الفترة","منع الإدخال والتعديل في فترة انتهت مراجعتها."]
+];
+function norm(s){ return s.replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/[ًٌٍَُِّْ]/g,"") }
+function drawGl(){
+  var q=norm($("gl-q").value.trim());
+  var rows=GL.filter(function(g){ return !q||norm(g[0]+" "+g[1]).indexOf(q)>=0 });
+  $("glList").innerHTML=rows.map(function(g){ return "<dt>"+g[0]+"</dt><dd>"+g[1]+"</dd>" }).join("");
+  $("glEmpty").hidden=rows.length>0;
+}
+$("gl-q").addEventListener("input",drawGl); drawGl();
+
+recon(); route();
+})();
+</script>
