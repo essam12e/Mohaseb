@@ -97,6 +97,22 @@ details>div{padding-top:10px;display:flex;flex-direction:column;gap:10px}
 .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .flow span{background:var(--sunken);border-radius:8px;padding:6px 12px;font-size:14px;font-weight:500}
 .flow i{font-style:normal;color:var(--muted)}
+.fig{margin:0;display:flex;flex-direction:column;gap:6px;align-items:center}
+.fig svg{width:100%;max-width:540px;height:auto;display:block;font-family:var(--body)}
+.fig figcaption{font-size:13px;color:var(--muted);text-align:center;max-width:60ch}
+.fig text{text-anchor:middle}
+.fx{fill:var(--ink);font-size:12px;font-weight:600} .fm{fill:var(--muted);font-size:10.5px} .fn{fill:var(--ink);font-size:11px;font-variant-numeric:tabular-nums}
+.fb{fill:var(--sunken);stroke:var(--line)} .fa{fill:var(--accent-soft);stroke:var(--accent)} .fs{fill:var(--surface);stroke:var(--line)}
+.fl{stroke:var(--accent);stroke-width:1.8;fill:none;stroke-dasharray:6 6} .fk{stroke:var(--ink);stroke-width:1.6;fill:none}
+.fbad{stroke:var(--bad);stroke-width:2.4;fill:none;stroke-dasharray:6 6} .fzone{fill:var(--bad-soft)} .ftb{fill:var(--bad);font-size:12px;font-weight:700}
+.fdr{fill:var(--debit);font-size:13px;font-weight:700} .fcr{fill:var(--credit);font-size:13px;font-weight:700}
+.fah{fill:var(--accent)} .fdot{fill:var(--bad)} .fpiv{fill:var(--accent)}
+@media (prefers-reduced-motion:no-preference){
+  @keyframes dashFlow{to{stroke-dashoffset:-24}}
+  @keyframes pulseRing{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.7);opacity:.3}}
+  .fl,.fbad{animation:dashFlow 1.6s linear infinite}
+  .fpulse{transform-box:fill-box;transform-origin:center;animation:pulseRing 2.4s ease-in-out infinite}
+}
 @media (max-width:820px){
   .shell{grid-template-columns:minmax(0,1fr);gap:0}
   .side{padding-block:12px 8px;gap:8px;border-bottom:1px solid var(--line)}
@@ -108,6 +124,9 @@ details>div{padding-top:10px;display:flex;flex-direction:column;gap:10px}
 @media (prefers-reduced-motion:no-preference){ nav a,.chip{transition:background .15s} }
 </style>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="fah" d="M0 0L8 4L0 8z"/></marker>
+</defs></svg>
 <div class="shell">
   <div class="side">
     <div class="brand"><b>مُحاسب</b><span>موجّهك اليومي في المحاسبة</span></div>
@@ -157,6 +176,31 @@ details>div{padding-top:10px;display:flex;flex-direction:column;gap:10px}
       <div class="stack" id="recon"></div>
     </div>
 
+    <div class="panel">
+      <h2>أين يذهب كل مبلغ</h2>
+      <figure class="fig">
+        <svg viewBox="0 0 360 300" role="img" aria-label="مخطط يوضح أن فاتورة المبيعات تتوزع على أربع طرق دفع، وكل طريقة تدخل على حساب مختلف">
+          <rect class="fa" x="110" y="8" width="140" height="42" rx="8"/>
+          <text class="fx" x="180" y="26">مبيعات اليوم</text><text class="fn" x="180" y="42" id="fg-total">0.00</text>
+          <path class="fl" marker-end="url(#ah)" d="M180 50V74H315V98"/><path class="fl" marker-end="url(#ah)" d="M180 50V74H225V98"/>
+          <path class="fl" marker-end="url(#ah)" d="M180 50V74H135V98"/><path class="fl" marker-end="url(#ah)" d="M180 50V74H45V98"/>
+          <rect class="fb" x="273" y="100" width="84" height="44" rx="8"/><text class="fx" x="315" y="118">نقد</text><text class="fn" x="315" y="135" id="fg-cash">0.00</text>
+          <rect class="fb" x="183" y="100" width="84" height="44" rx="8"/><text class="fx" x="225" y="118">شبكة</text><text class="fn" x="225" y="135" id="fg-net">0.00</text>
+          <rect class="fb" x="93" y="100" width="84" height="44" rx="8"/><text class="fx" x="135" y="118">تحويل</text><text class="fn" x="135" y="135" id="fg-trf">0.00</text>
+          <rect class="fb" x="3" y="100" width="84" height="44" rx="8"/><text class="fx" x="45" y="118">آجل</text><text class="fn" x="45" y="135" id="fg-crd">0.00</text>
+          <path class="fl" marker-end="url(#ah)" d="M315 144V196"/><path class="fl" marker-end="url(#ah)" d="M225 144V196"/>
+          <path class="fl" marker-end="url(#ah)" d="M135 144V196"/><path class="fl" marker-end="url(#ah)" d="M45 144V196"/>
+          <rect class="fs" x="273" y="198" width="84" height="44" rx="8"/><text class="fx" x="315" y="224">الصندوق</text>
+          <rect class="fs" x="183" y="198" width="84" height="44" rx="8"/><text class="fx" x="225" y="216">شبكة تحت</text><text class="fx" x="225" y="232">التحصيل</text>
+          <rect class="fs" x="93" y="198" width="84" height="44" rx="8"/><text class="fx" x="135" y="224">البنك</text>
+          <rect class="fs" x="3" y="198" width="84" height="44" rx="8"/><text class="fx" x="45" y="216">حساب</text><text class="fx" x="45" y="232">العميل</text>
+          <path class="fl" marker-end="url(#ah)" d="M225 242V266H135V245"/>
+          <text class="fm" x="180" y="286">البنك يودع مبلغ الشبكة بعد يوم أو يومين ناقص عمولته</text>
+        </svg>
+        <figcaption>الأرقام في الرسم تتغير مع ما تدخله في الخانات. كل طريقة دفع تزيد حسابًا مختلفًا، ولهذا خطأ في طريقة الدفع يُظهر فرقًا في حسابين.</figcaption>
+      </figure>
+    </div>
+
     <div class="grid2">
       <div class="panel">
         <h2>القيد المتوقع لمبيعات اليوم</h2>
@@ -203,6 +247,22 @@ details>div{padding-top:10px;display:flex;flex-direction:column;gap:10px}
       <h1>الأصناف بالسالب</h1>
       <p class="lead">الرصيد السالب معناه أن النظام سجّل خروج كمية أكبر مما سجّل دخولها. البضاعة لا تكون سالبة على الرف، فالخطأ دائمًا في التسجيل.</p>
     </div>
+    <div class="panel">
+      <h2>كيف يصير الصنف بالسالب</h2>
+      <figure class="fig">
+        <svg viewBox="0 0 360 215" role="img" aria-label="رسم لرصيد صنف: شراء عشرة، ثم بيع ستة، ثم بيع سبعة فينزل الرصيد إلى سالب ثلاثة، ثم يرتفع بعد إدخال فاتورة شراء متأخرة">
+          <rect class="fzone" x="30" y="120" width="310" height="60"/>
+          <path class="fk" d="M30 120H340"/><text class="fm" x="16" y="124">0</text><text class="fm" x="300" y="172">منطقة السالب</text>
+          <path class="fk" style="stroke:var(--accent);stroke-width:2.4" d="M330 120V40H260V88H190V120M110 120V48H40"/>
+          <path class="fbad" d="M190 120V144H110V120"/>
+          <circle class="fdot fpulse" cx="150" cy="144" r="5"/><circle class="fdot" cx="150" cy="144" r="4"/>
+          <text class="fx" x="295" y="32">شراء 10</text><text class="fx" x="225" y="80">بيع 6</text>
+          <text class="ftb" x="150" y="164">بيع 7، الرصيد −3</text><text class="fx" x="75" y="40">شراء أُدخل متأخرًا</text>
+          <text class="fm" x="185" y="204">الحركات مرتبة من اليمين (الأقدم) إلى اليسار (الأحدث)</text>
+        </svg>
+        <figcaption>على الرف كانت البضاعة موجودة وقت البيع الثاني، لكن فاتورة شرائها لم تكن دخلت النظام. السالب هو الفترة بين البيع وإدخال الشراء.</figcaption>
+      </figure>
+    </div>
     <div class="grid2">
       <div class="panel">
         <h2>لماذا هو مشكلة</h2>
@@ -245,6 +305,24 @@ details>div{padding-top:10px;display:flex;flex-direction:column;gap:10px}
     <div class="stack">
       <h1>الأستاذ العام</h1>
       <p class="lead">الأستاذ العام هو سجل كل حساب على حدة: كل ما دخل عليه مدينًا ودائنًا ورصيده. أي فاتورة أو سند تدخله ينتهي هنا. إذا أردت أن تعرف «من أين جاء هذا الرقم؟» فالجواب في كشف الحساب.</p>
+    </div>
+    <div class="panel">
+      <h2>من المستند إلى الأستاذ</h2>
+      <figure class="fig">
+        <svg viewBox="0 0 360 228" role="img" aria-label="الفواتير والسندات تتحول إلى قيد يومية، والقيد يُرحَّل إلى حسابات الأستاذ العام">
+          <rect class="fb" x="250" y="8" width="100" height="34" rx="8"/><text class="fx" x="300" y="30">فاتورة مبيعات</text>
+          <rect class="fb" x="130" y="8" width="100" height="34" rx="8"/><text class="fx" x="180" y="30">فاتورة مشتريات</text>
+          <rect class="fb" x="10" y="8" width="100" height="34" rx="8"/><text class="fx" x="60" y="30">سند صرف</text>
+          <path class="fl" d="M300 42V60H180M60 42V60H180"/><path class="fl" marker-end="url(#ah)" d="M180 42V76"/>
+          <rect class="fa" x="120" y="78" width="120" height="34" rx="8"/><text class="fx" x="180" y="100">قيد اليومية</text>
+          <path class="fl" marker-end="url(#ah)" d="M180 112V138"/>
+          <rect class="fs" x="20" y="140" width="320" height="80" rx="10"/><text class="fx" x="180" y="160">الأستاذ العام</text>
+          <rect class="fb" x="240" y="172" width="86" height="34" rx="6"/><text class="fx" x="283" y="194">الصندوق</text>
+          <rect class="fb" x="137" y="172" width="86" height="34" rx="6"/><text class="fx" x="180" y="194">المخزون</text>
+          <rect class="fb" x="34" y="172" width="86" height="34" rx="6"/><text class="fx" x="77" y="194">الموردون</text>
+        </svg>
+        <figcaption>أنت تدخل المستند فقط. النظام يولّد القيد ويوزّعه على الحسابات، وكل حساب يحتفظ بكشف حركته.</figcaption>
+      </figure>
     </div>
     <div class="panel">
       <h2>كيف تقرأ كشف حساب</h2>
@@ -300,6 +378,17 @@ details>div{padding-top:10px;display:flex;flex-direction:column;gap:10px}
     <div class="panel">
       <h2>المعادلة المحاسبية</h2>
       <div class="eq">الأصول = الالتزامات + حقوق الملكية</div>
+      <figure class="fig">
+        <svg viewBox="0 0 360 190" role="img" aria-label="ميزان: الأصول في كفة، والالتزامات مع حقوق الملكية في الكفة الأخرى، والكفتان متساويتان">
+          <path class="fk" d="M60 52H300M180 52V150"/><rect class="fb" x="140" y="150" width="80" height="8" rx="3"/>
+          <circle class="fpiv fpulse" cx="180" cy="52" r="5"/><circle class="fpiv" cx="180" cy="52" r="5"/>
+          <path class="fk" d="M300 52L265 88M300 52L335 88M60 52L25 80M60 52L95 80"/>
+          <rect class="fa" x="250" y="88" width="100" height="48" rx="6"/><text class="fx" x="300" y="108">الأصول</text><text class="fm" x="300" y="125">ما تملكه المنشأة</text>
+          <rect class="fb" x="10" y="80" width="100" height="28" rx="6"/><text class="fx" x="60" y="99">الالتزامات</text>
+          <rect class="fb" x="10" y="108" width="100" height="28" rx="6"/><text class="fx" x="60" y="127">حقوق الملكية</text>
+          <text class="fm" x="180" y="180">أي عملية تضيف للكفتين معًا أو تنقل داخل الكفة نفسها</text>
+        </svg>
+      </figure>
       <p>كل ما تملكه المنشأة (أصول) مموَّل إما من الغير (التزامات) أو من أصحابها (حقوق ملكية). كل عملية تُبقي المعادلة متوازنة، ولهذا كل قيد له طرفان متساويان.</p>
     </div>
     <div class="grid2">
@@ -311,6 +400,17 @@ details>div{padding-top:10px;display:flex;flex-direction:column;gap:10px}
           <li>اشتريت بالآجل: المخزون أخذ البضاعة (مدين)، والمورد أعطاها (دائن).</li>
           <li>دفعت إيجارًا: مصروف الإيجار أخذ (مدين)، والصندوق أعطى (دائن).</li>
         </ul>
+        <figure class="fig">
+          <svg viewBox="0 0 360 200" role="img" aria-label="حسابان على شكل حرف T: المبيعات دائنة بألف، والصندوق مدين بألف، وسهم ينقل القيمة من الدائن إلى المدين">
+            <text class="fx" x="270" y="20">الصندوق</text><path class="fk" d="M200 30H340M270 30V112"/>
+            <text class="fm" x="305" y="46">مدين</text><text class="fm" x="235" y="46">دائن</text><text class="fdr" x="305" y="76">1,000</text>
+            <text class="fx" x="90" y="20">المبيعات</text><path class="fk" d="M20 30H160M90 30V112"/>
+            <text class="fm" x="125" y="46">مدين</text><text class="fm" x="55" y="46">دائن</text><text class="fcr" x="55" y="76">1,000</text>
+            <path class="fl" marker-end="url(#ah)" d="M55 86C55 168 305 168 305 88"/>
+            <text class="fx" x="180" y="170">القيمة تخرج من الدائن وتدخل على المدين</text>
+            <text class="fm" x="180" y="190">مثال: بيع نقدي بمبلغ 1,000</text>
+          </svg>
+        </figure>
         <p class="note">المدين والدائن ليسا «جيد» و«سيئ». هما فقط جهتا القيد.</p>
       </div>
       <div class="panel">
@@ -352,6 +452,20 @@ details>div{padding-top:10px;display:flex;flex-direction:column;gap:10px}
           <li>أغلب الأنظمة تستخدم «المتوسط المرجّح» لتسعير التكلفة، ولهذا ترتيب تواريخ الشراء والبيع يؤثر في الربح.</li>
         </ul>
       </div>
+    </div>
+    <div class="panel">
+      <h2>رحلة مبلغ الشبكة</h2>
+      <figure class="fig">
+        <svg viewBox="0 0 360 170" role="img" aria-label="مبلغ الشبكة ينتقل من جهاز الشبكة إلى حساب شبكة تحت التحصيل ثم إلى البنك، وتُخصم منه عمولة البنك">
+          <rect class="fb" x="250" y="24" width="100" height="52" rx="8"/><text class="fx" x="300" y="46">جهاز الشبكة</text><text class="fm" x="300" y="63">العميل يدفع 1,000</text>
+          <rect class="fa" x="130" y="24" width="100" height="52" rx="8"/><text class="fx" x="180" y="46">تحت التحصيل</text><text class="fm" x="180" y="63">رصيد مؤقت 1,000</text>
+          <rect class="fs" x="10" y="24" width="100" height="52" rx="8"/><text class="fx" x="60" y="46">البنك</text><text class="fm" x="60" y="63">يصل 992</text>
+          <path class="fl" marker-end="url(#ah)" d="M250 50H232"/><path class="fl" marker-end="url(#ah)" d="M130 50H112"/>
+          <path class="fl" marker-end="url(#ah)" d="M180 76V112"/>
+          <rect class="fb" x="120" y="114" width="120" height="44" rx="8"/><text class="fx" x="180" y="133">عمولة البنك وضريبتها</text><text class="fm" x="180" y="149">8 تُسجَّل مصروفًا</text>
+        </svg>
+        <figcaption>الأرقام مثال. بعد تسجيل الإيداع والعمولة يعود حساب «تحت التحصيل» إلى الصفر. إن بقي فيه رصيد قديم فهناك مبلغ لم يودعه البنك أو لم يُسجَّل.</figcaption>
+      </figure>
     </div>
     <div class="panel">
       <h2>مشاكل المحاسبة التي ستقابلها</h2>
@@ -437,6 +551,7 @@ function st(kind,title,text){ return "<div class='status "+kind+"'><b>"+title+"<
 function recon(){
   var v={}; FIELDS.forEach(function(f){ v[f]=num($("r-"+f).value) });
   $("exTag").hidden=!isSample;
+  [["total",v.total],["cash",v.cash],["net",v.net],["trf",v.trf],["crd",v.crd]].forEach(function(a){ $("fg-"+a[0]).textContent=fmt(a[1]) });
   var out="", methods=v.cash+v.net+v.trf+v.crd, d1=methods-v.total;
   if(v.total===0 && methods===0){ $("recon").innerHTML="<p class='lead'>أدخل إجمالي المبيعات وطرق الدفع لتظهر المطابقة.</p>"; $("dayEntry").innerHTML=""; $("vatTable").innerHTML=""; return; }
 
